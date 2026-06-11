@@ -79,7 +79,8 @@ def test_directory_permissions_check(tmp_path):
     d.mkdir(mode=0o700)
     assert hc._check_directory_permissions(d) is True
     d2 = tmp_path / 'open'
-    d2.mkdir(mode=0o777)
+    d2.mkdir()
+    d2.chmod(0o777)
     assert hc._check_directory_permissions(d2) is False
 
 
