@@ -1,0 +1,85 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov rich pyyaml psutil packaging cryptography
+
+      - name: Install NebulaForge editable
+        run: pip install -e .
+
+      - name: Run linting (flake8)
+        run: |
+          pip install flake8
+          flake8 nebulaforge/ --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Run type checking (mypy)
+        run: |
+          pip install mypy
+          mypy nebulaforge/ --ignore-missing-imports --no-error-summary || true
+
+      - name: Run tests with coverage
+        run: pytest tests/ -v --tb=short --cov=nebulaforge --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: matrix.python-version == '3.12'
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
+  security:
+    name: Security scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install NebulaForge and dev tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install bandit safety
+
+      - name: Run Bandit (SAST)
+        run: |
+          bandit -r nebulaforge/ -f json -o bandit-report.json || true
+          bandit -r nebulaforge/ -ll
+
+      - name: Run Safety (dependency check)
+        run: |
+          safety check --json || true
+
+      - name: Upload Bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.json
