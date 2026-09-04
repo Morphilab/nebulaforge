@@ -28,8 +28,6 @@ class EnvironmentService:
             audit_logger=self.sm.audit_logger
         )
 
-    # ── Helpers ─────────────────────────────────────────────
-
     def validate_env_name(self, name: str) -> bool:
         return self.validator.validate_env_name(name)
 
@@ -47,8 +45,6 @@ class EnvironmentService:
 
     def get_security_info(self) -> Dict[str, Any]:
         return self.sm.get_security_info()
-
-    # ── Environments ─────────────────────────────────────────
 
     def list_environments(self) -> ServiceResult:
         success, envs = self.sm.list_environments()
@@ -135,8 +131,6 @@ class EnvironmentService:
         success, message = self.sm.import_environment(filepath, env_name)
         return ServiceResult(success, message)
 
-    # ── Diagnostics and auditing ─────────────────────────────
-
     def run_diagnostics(self) -> ServiceResult:
         try:
             diagnostics = self.sm.run_security_diagnostics()
@@ -148,8 +142,6 @@ class EnvironmentService:
         trail = self.sm.get_audit_trail(limit)
         return ServiceResult(True, f"{len(trail)} entries", trail)
 
-    # ── Configuration ────────────────────────────────────────
-
     def get_available_profiles(self) -> List[str]:
         return list(self.sm.config_manager.security_profiles.keys())
 
@@ -158,8 +150,6 @@ class EnvironmentService:
             return ServiceResult(False, f"Unknown profile: {level}")
         success = self.sm.change_security_level(level)
         return ServiceResult(success, f"Security level changed to: {level}")
-
-    # ── Vulnerabilities ──────────────────────────────────────
 
     def check_vulnerabilities(self, env_name: str) -> ServiceResult:
         if not self.validate_env_name(env_name):
@@ -172,8 +162,6 @@ class EnvironmentService:
             return ServiceResult(False, "Invalid environment name")
         outdated = self.sm.dependency_checker.get_outdated_packages(env_name)
         return ServiceResult(True, f"{len(outdated)} outdated packages", outdated)
-
-    # ── Credentials and security ─────────────────────────────
 
     def get_system_status(self) -> Dict[str, Any]:
         return self.sm.get_system_status()

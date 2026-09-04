@@ -24,8 +24,8 @@ pytest tests/ -v
 
 ## Code Guidelines
 
-- All user-facing strings must be in English
-- Follow PEP 8 style
+- All user-facing strings must be in English (code and comments)
+- Follow PEP 8 style; CI enforces the critical flake8 checks (`flake8 nebulaforge/ --select=E9,F63,F7,F82`) and `ruff check nebulaforge/` should pass locally
 - Add type hints where possible
 - Keep security as the top priority
 - Write clear commit messages
