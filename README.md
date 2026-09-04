@@ -28,7 +28,7 @@ Whether you are an individual developer who cares about reproducibility, a data-
 - **Four Security Profiles**: Low, Medium, High, and Paranoid — each with progressively stricter controls
 - **Cryptographic Audit Trail**: SHA-256 hash chain on every audit entry, tamper-evident
 - **Secure Backups**: Automatic pre-operation backups with SHA-256 checksum verification
-- **Vulnerability Scanner**: Built-in detection of 20+ known vulnerable packages (CVE-aware)
+- **Vulnerability Scanner**: Built-in detection of 20 known vulnerable packages (CVE-aware)
 - **Plugin System**: Extensible architecture with `SecurityScanner` and `HealthCheck` built-ins
 - **Encrypted Storage**: Fernet (AES-128-CBC + HMAC-SHA256) with PBKDF2 (600k iterations) for credentials and secrets
 - **Session Management**: Cryptographically secure tokens with TTL and max-sessions enforcement
@@ -43,6 +43,9 @@ This project was developed with assistance from artificial intelligence tools. G
 
 **Español:**  
 Este proyecto fue desarrollado con asistencia de herramientas de inteligencia artificial. Dada la naturaleza automatizada de algunos componentes, se recomienda que los usuarios revisen y prueben el código independientemente antes de integrarlo en sus propios sistemas.
+
+---
+
 ## Quick Start
 
 ```bash
@@ -82,13 +85,12 @@ $ nebulaforge diagnostics
 [INFO] Security score: 92/100
 
 # Back up an environment
-$ nebulaforge backup data-science
-[OK] Backup created: backup_data-science_20260607_101530.yaml
-[OK] SHA-256 checksum verified
+$ nebulaforge backup --create data-science
+✅ Backup created successfully: backup_data-science_20260607_101530.yaml
 
 # Change to a stricter security profile
-$ nebulaforge config set security.security_level high
-[OK] Security level changed to 'high'
+$ nebulaforge config --security-level high
+✅ Security level changed to: high
 ```
 
 ---
@@ -105,21 +107,24 @@ $ nebulaforge config set security.security_level high
 | `nebulaforge remove <env>`     | Remove an environment (with backup)      |
 | `nebulaforge info <env>`       | Show environment details                 |
 | `nebulaforge update <env>`     | Update packages in an environment        |
-| `nebulaforge backup [env]`     | Create a backup of one or all envs       |
+| `nebulaforge backup [env]`     | Manage backups (`--create`, `--list`, `--restore`) |
 | `nebulaforge diagnostics`      | Run full security diagnostics            |
 | `nebulaforge audit`            | View the audit trail                     |
-| `nebulaforge config`           | View or change configuration             |
+| `nebulaforge config`           | Change security level (`--security-level`)|
 
 ---
 
 ## Security Profiles
 
-| Profile   | Allowed Commands       | Protected Envs             | Confirmation | Max Timeout | Recommended For          |
-|-----------|------------------------|----------------------------|--------------|-------------|--------------------------|
-| Low       | conda, mamba, pip      | base, root                 | No           | 600s        | Fast development         |
-| Medium    | conda, mamba, pip      | base, root, prod, system   | Yes          | 300s        | General use (default)    |
-| High      | conda, mamba           | base, root, prod, system   | Yes          | 180s        | Sensitive projects       |
-| Paranoid  | conda only             | base, root, prod, system   | Yes          | 120s        | Maximum security         |
+| Profile   | Allowed Commands       | Protected Envs¹          | Confirmation | Max Timeout | Reserved Names Blocked at Creation² |
+|-----------|------------------------|--------------------------|--------------|-------------|--------------------------------------|
+| Low       | conda, mamba, pip      | base, root               | No           | 600s        | base, root                           |
+| Medium    | conda, mamba, pip      | base, root, prod         | Yes          | 300s        | + system, conda                      |
+| High      | conda, mamba           | base, root, prod         | Yes          | 180s        | + prod                               |
+| Paranoid  | conda only             | base, root, prod         | Yes          | 120s        | + env, venv                          |
+
+¹ *Protected Envs* cannot be deleted or modified and require confirmation for other operations.
+² Names rejected when creating a new environment; each row accumulates the rows above it (enforced by `SecurityValidator` through each profile's `validation_strictness`).
 
 Each profile also adjusts `validation_strictness` for environment names, package names, and filenames — stricter profiles reject more permissive patterns and block more reserved keywords.
 
@@ -127,9 +132,9 @@ Each profile also adjusts `validation_strictness` for environment names, package
 
 ## Security Highlights
 
-- **Protected environments** (`base`, `root`, `prod`, `system`) cannot be modified without explicit confirmation
+- **Protected environments** (`base`, `root`, `prod`) cannot be deleted or modified and require explicit confirmation; reserved names such as `system` or `conda` are additionally blocked at creation time depending on the profile
 - **Production mode** blocks delete operations by default and requires confirmation for install/update/clone
-- **Strict package name validation** with malware keyword blocking (16+ terms)
+- **Strict package name validation** with progressive malware keyword blocking (9 terms at Medium, 18 at High, 27 at Paranoid)
 - **Command runner hardening**: `shell=False`, argument-level dangerous pattern detection, conda flag blocking per profile
 - **Path-traversal protection** in backup and import operations (sandboxed to backup directory)
 - **Cryptographic chain integrity** on every audit entry (SHA-256 chain)
@@ -173,10 +178,13 @@ pytest tests/ -v
 pytest tests/ -v --cov=nebulaforge --cov-report=term-missing
 
 # Linting and type checking
+flake8 nebulaforge/ --count --select=E9,F63,F7,F82 --show-source --statistics
 ruff check nebulaforge/
 mypy nebulaforge/ --ignore-missing-imports
 bandit -r nebulaforge/
 ```
+
+CI enforces the critical `flake8` checks (`E9,F63,F7,F82`) on every push; `ruff` (configured in `pyproject.toml`) is the recommended style linter for local development.
 
 All tests pass across **Python 3.8, 3.9, 3.10, 3.11 and 3.12** in CI.
 
@@ -218,7 +226,7 @@ nebulaforge/
 │   └── vulnerability_db.py
 ├── config/                # Security profile definitions
 │   └── security_profiles.py
-└── tests/                 # 24 test files, 239 tests
+└── tests/                 # 26 test files, 260 tests
 ```
 
 ---
@@ -232,7 +240,7 @@ Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for the workfl
 3. Install dev dependencies (`pip install -e ".[dev]"`)
 4. Make your changes and add tests
 5. Run the test suite (`pytest tests/ -v`)
-6. Run the linters (`ruff check nebulaforge/`)
+6. Run the linters (`flake8 nebulaforge/ --select=E9,F63,F7,F82` and `ruff check nebulaforge/`)
 7. Open a Pull Request
 
 ---
