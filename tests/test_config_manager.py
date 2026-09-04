@@ -1,15 +1,15 @@
 """
-Tests para ConfigManager
+Tests for ConfigManager
 """
 
 from pathlib import Path
 
+from nebulaforge.core.config_manager import ConfigManager
 
-def test_config_default_values(tmp_path):
-    monkeypatch = __import__('pytest').MonkeyPatch()
+
+def test_config_default_values(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, 'home', lambda: tmp_path)
 
-    from nebulaforge.core.config_manager import ConfigManager
     config_path = tmp_path / '.nebulaforge' / 'config' / 'config.yaml'
     cm = ConfigManager(config_path=config_path)
 
@@ -18,11 +18,9 @@ def test_config_default_values(tmp_path):
     assert cm.get('nonexistent.key', 'default') == 'default'
 
 
-def test_config_set_and_get(tmp_path):
-    monkeypatch = __import__('pytest').MonkeyPatch()
+def test_config_set_and_get(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, 'home', lambda: tmp_path)
 
-    from nebulaforge.core.config_manager import ConfigManager
     config_path = tmp_path / '.nebulaforge' / 'config' / 'config.yaml'
     cm = ConfigManager(config_path=config_path)
 
@@ -30,11 +28,9 @@ def test_config_set_and_get(tmp_path):
     assert cm.get('security.security_level') == 'high'
 
 
-def test_security_profile_from_config(tmp_path):
-    monkeypatch = __import__('pytest').MonkeyPatch()
+def test_security_profile_from_config(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, 'home', lambda: tmp_path)
 
-    from nebulaforge.core.config_manager import ConfigManager
     config_path = tmp_path / '.nebulaforge' / 'config' / 'config.yaml'
     cm = ConfigManager(config_path=config_path)
 
@@ -45,11 +41,9 @@ def test_security_profile_from_config(tmp_path):
     assert profile.require_confirmation is True
 
 
-def test_merge_configs_user_overrides_default(tmp_path):
-    monkeypatch = __import__('pytest').MonkeyPatch()
+def test_merge_configs_user_overrides_default(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, 'home', lambda: tmp_path)
 
-    from nebulaforge.core.config_manager import ConfigManager
     config_path = tmp_path / '.nebulaforge' / 'config' / 'config.yaml'
     cm = ConfigManager(config_path=config_path)
 
