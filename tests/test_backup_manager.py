@@ -24,7 +24,7 @@ def test_calculate_checksum_deterministic():
     data_str = json.dumps(data, sort_keys=True)
     checksum1 = hashlib.sha256(data_str.encode('utf-8')).hexdigest()
 
-    # Mismo dato, mismo checksum
+    # Same data, same checksum
     data_str2 = json.dumps(data, sort_keys=True)
     checksum2 = hashlib.sha256(data_str2.encode('utf-8')).hexdigest()
 

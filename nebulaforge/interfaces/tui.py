@@ -105,8 +105,6 @@ class NebulaForgeTUI:
         except (KeyboardInterrupt, Exception):
             return -1
 
-    # ── Flows ───────────────────────────────────────────────
-
     def list_environments_flow(self):
         with self.console.status("[bold green]Fetching environments..."):
             result = self.svc.list_environments()
@@ -341,8 +339,6 @@ class NebulaForgeTUI:
         except Exception:
             self.console.print("[red]Invalid selection[/red]")
         self._wait()
-
-    # ── Helpers ──────────────────────────────────────────
 
     def _select_env(self, environments: List[str], action: str = "") -> Optional[str]:
         from nebulaforge.core.cli_helpers import select_environment

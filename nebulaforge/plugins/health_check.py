@@ -51,18 +51,15 @@ class HealthCheckPlugin(BasePlugin):
         }
 
         try:
-            # Verify the environment exists
             if not self.validate_environment(env_name):
                 health_info['status'] = 'error'
                 health_info['issues'].append('Environment not found or inaccessible')
                 return health_info
 
-            # Run checks
             health_info['checks']['packages'] = self._check_packages(env_name)
             health_info['checks']['dependencies'] = self._check_dependencies(env_name)
             health_info['checks']['permissions'] = self._check_permissions(env_name)
 
-            # Determine overall status
             if any(check.get('status') == 'error' for check in health_info['checks'].values()):
                 health_info['status'] = 'error'
             elif any(check.get('status') == 'warning' for check in health_info['checks'].values()):
@@ -96,12 +93,10 @@ class HealthCheckPlugin(BasePlugin):
                 packages = json.loads(output)
                 package_names = [pkg['name'] for pkg in packages]
 
-                # Detect duplicates
                 duplicates = {name for name in package_names if package_names.count(name) > 1}
                 if duplicates:
                     deps_info['conflicts'].append(f'Duplicate packages: {", ".join(duplicates)}')
 
-                # Known conflicts
                 known_conflicts = self._check_known_conflicts(packages)
                 deps_info['conflicts'].extend(known_conflicts)
 
@@ -144,8 +139,6 @@ class HealthCheckPlugin(BasePlugin):
             perf_info['recommendations'].append(f'Performance check error: {str(e)}')
 
         return perf_info
-
-    # ======================== HELPER METHODS ========================
 
     def _check_packages(self, env_name: str) -> Dict[str, Any]:
         check_result: Dict[str, Any] = {'status': 'unknown', 'total_packages': 0, 'broken_packages': 0, 'details': []}

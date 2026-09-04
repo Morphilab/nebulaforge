@@ -231,7 +231,6 @@ class SecurityScannerPlugin(BasePlugin):
                 suspicious_packages = []
 
                 for pkg in packages:
-                    # Basic verification
                     if self._verify_package_integrity(pkg):
                         integrity_results['verified_packages'] += 1
                     else:
@@ -240,7 +239,6 @@ class SecurityScannerPlugin(BasePlugin):
                             'issue': 'Basic verification failed'
                         })
 
-                    # Enhanced verification
                     enhanced = self._verify_package_integrity_enhanced(pkg, env_name)
                     if enhanced.get('crypto_verified', False):
                         crypto_verified += 1
@@ -279,8 +277,6 @@ class SecurityScannerPlugin(BasePlugin):
             })
 
         return integrity_results
-
-    # ======================== ENHANCED METHODS ========================
 
     def _verify_package_integrity_enhanced(self, pkg_info: Dict, env_name: str) -> Dict[str, Any]:
         result: Dict[str, Any] = {
@@ -409,8 +405,6 @@ class SecurityScannerPlugin(BasePlugin):
         except Exception as e:
             audit_results['security_issues'].append(f'Error auditing critical files: {str(e)}')
 
-    # ======================== COMPATIBLE METHODS ========================
-
     def _check_package_vulnerabilities(self, pkg_name: str, pkg_version: str) -> List[Dict[str, str]]:
         return check_vulns(pkg_name, pkg_version)
 
@@ -433,7 +427,6 @@ class SecurityScannerPlugin(BasePlugin):
         except Exception:
             return False
 
-    # Remaining helper methods (maintain compatibility)
     def _audit_directory_permissions(self, directory, audit_results):
         try:
             stat = directory.stat()

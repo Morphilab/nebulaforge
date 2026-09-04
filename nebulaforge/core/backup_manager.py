@@ -42,7 +42,6 @@ class BackupManager:
     def create_backup(self, env_name: str, description: str = "") -> Tuple[bool, str]:
         """Create environment backup with integrity checksum"""
         try:
-            # Verify the environment exists
             success, environments = self._list_environments()
             if not success or env_name not in environments:
                 return False, f"Environment '{env_name}' not found"
@@ -50,12 +49,10 @@ class BackupManager:
             if not env_info:
                 return False, f"Could not get environment info for '{env_name}'"
 
-            # Create backup name and path
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             backup_filename = f"backup_{env_name}_{timestamp}.yaml"
             backup_path = self.backup_dir / backup_filename
 
-            # Preparar datos del backup
             backup_data = {
                 'name': env_name,
                 'timestamp': timestamp,
@@ -69,7 +66,6 @@ class BackupManager:
                 }
             }
 
-            # Save backup
             with open(backup_path, 'w', encoding='utf-8') as f:
                 yaml.dump(backup_data, f, default_flow_style=False, indent=2)
 
@@ -80,10 +76,8 @@ class BackupManager:
                 f.write(f"{checksum}  {backup_filename}\n")
             checksum_path.chmod(0o600)
 
-            # Secure permissions
             backup_path.chmod(0o600)
 
-            # Register in audit
             self.audit_logger.log_secure_action(
                 action="backup_created",
                 target=env_name,
@@ -91,7 +85,6 @@ class BackupManager:
                 details={"filename": backup_filename}
             )
 
-            # Clean up old backups
             self._cleanup_old_backups()
 
             return True, f"Backup created successfully: {backup_filename}"
@@ -132,7 +125,6 @@ class BackupManager:
             if not backup_path.exists():
                 return False, f"Backup file not found: {backup_file}"
 
-            # Load backup
             with open(backup_path, encoding='utf-8') as f:
                 backup_data = yaml.safe_load(f)
 
@@ -141,7 +133,6 @@ class BackupManager:
             if not self._verify_checksum(backup_path, checksum_path):
                 return False, "Invalid checksum - backup is corrupt or has been modified"
 
-            # Use backup name if not specified
             if not env_name:
                 env_name = backup_data.get('name')
 
@@ -158,7 +149,6 @@ class BackupManager:
                         f"Could not create pre-restore backup for '{env_name}': {backup_msg}"
                     )
 
-            # Prepare temporary environment.yml file
             temp_env_file = self.backup_dir / f"temp_restore_{env_name}.yaml"
             temp_data = {
                 'name': env_name,
@@ -174,12 +164,10 @@ class BackupManager:
                 ['conda', 'env', 'remove', '-n', env_name, '-y'], 'remove_before_restore'
             )
 
-            # Restore with conda
             success, output = self.command_runner.run_secure_command(
                 ['conda', 'env', 'create', '-f', str(temp_env_file)], 'restore_backup'
             )
 
-            # Clean up temporary file
             temp_env_file.unlink(missing_ok=True)
 
             if success:

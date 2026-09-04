@@ -24,51 +24,41 @@ class NebulaForgeCLI:
         )
         subparsers = parser.add_subparsers(dest='command', help='Available commands')
 
-        # Comando: list
         list_parser = subparsers.add_parser('list', help='List available environments')
         list_parser.add_argument('--verbose', '-v', action='store_true', help='Show detailed information')
 
-        # Comando: create
         create_parser = subparsers.add_parser('create', help='Create new environment')
         create_parser.add_argument('name', help='Environment name')
         create_parser.add_argument('--python', help='Python version (e.g. 3.9)')
         create_parser.add_argument('--packages', nargs='+', help='Initial packages')
         create_parser.add_argument('--channels', nargs='+', help='Additional channels')
 
-        # Comando: install
         install_parser = subparsers.add_parser('install', help='Install packages')
         install_parser.add_argument('environment', help='Environment name')
         install_parser.add_argument('packages', nargs='+', help='Packages to install')
         install_parser.add_argument('--no-conflict-check', action='store_true', help='Skip conflict check')
 
-        # Comando: remove
         remove_parser = subparsers.add_parser('remove', help='Delete environment')
         remove_parser.add_argument('environment', help='Environment name')
         remove_parser.add_argument('--no-backup', action='store_true', help='Do not create backup')
 
-        # Comando: info
         info_parser = subparsers.add_parser('info', help='Show environment info')
         info_parser.add_argument('environment', help='Environment name')
 
-        # Comando: update
         update_parser = subparsers.add_parser('update', help='Update packages')
         update_parser.add_argument('environment', help='Environment name')
         update_parser.add_argument('packages', nargs='*', help='Specific packages to update')
 
-        # Comando: backup
         backup_parser = subparsers.add_parser('backup', help='Manage backups')
         backup_parser.add_argument('--create', help='Create backup of environment')
         backup_parser.add_argument('--list', action='store_true', help='List backups')
         backup_parser.add_argument('--restore', help='Restore backup')
 
-        # Comando: diagnostics
         subparsers.add_parser('diagnostics', help='Run security diagnostics')
 
-        # Comando: audit
         audit_parser = subparsers.add_parser('audit', help='View audit logs')
         audit_parser.add_argument('--limit', type=int, default=10, help='Entry limit')
 
-        # Comando: config
         config_parser = subparsers.add_parser('config', help='System configuration')
         config_parser.add_argument('--security-level', choices=['low', 'medium', 'high', 'paranoid'],
                                    help='Change security level')
