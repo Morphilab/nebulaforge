@@ -1,6 +1,6 @@
 [project]
 name = "nebulaforge"
-version = "1.0.0"
+version = "1.0.1"
 description = "Forge secure, auditable Conda environments with enterprise-grade security"
 readme = "README.md"
 license = {text = "MIT"}
