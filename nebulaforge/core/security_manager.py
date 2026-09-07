@@ -33,7 +33,6 @@ class SecurityManager:
             else self.config_manager.get('core.production_mode', True)
         )
 
-        # Initialize components
         self.config_manager.initialize_secure_directories()
         self.audit_logger = AuditLogger(self.config_manager)
         self.error_handler = SecureErrorHandler(self.audit_logger)
@@ -46,7 +45,6 @@ class SecurityManager:
         self.dependency_checker = SecureDependencyChecker(self.config_manager, self.command_runner)
         self.validator = SecurityValidator(self.config_manager, self.audit_logger)
 
-        # Encrypted storage and sessions
         data_dir = Path(self.config_manager.get('paths.secure_data_dir', '~/.nebulaforge/data')).expanduser()
         self.credentials = SecureCredentials(data_dir / 'credentials.enc')
         self.session_manager = SessionManager()
@@ -56,12 +54,11 @@ class SecurityManager:
         profile_name = self.config_manager.get('security.security_level', 'medium')
         self.security_profile: SecurityProfile = self.config_manager.get_security_profile(profile_name)
 
-        # Registrar inicio del sistema
         self.audit_logger.log_secure_action(
             action="system_start",
             target="security_manager",
             status="success",
-                    details={"version": "1.0", "security_level": self.security_profile.level}
+            details={"version": "1.0", "security_level": self.security_profile.level}
         )
 
     def require_confirmation_for(self, operation: str, target: str) -> bool:

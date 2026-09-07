@@ -1,5 +1,5 @@
 """
-NebulaForge - Helpers comunes para interfaces CLI y TUI
+NebulaForge - Shared helpers for CLI and TUI interfaces
 """
 
 from typing import List, Optional
@@ -36,7 +36,6 @@ class CLIHelpers:
         input(message)
 
 
-# Convenience functions for compatibility
 def select_environment(environments: List[str], action: str = "select") -> Optional[str]:
     return CLIHelpers.select_environment(environments, action)
 

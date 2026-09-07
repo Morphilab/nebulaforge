@@ -41,11 +41,9 @@ class SecureDiagnostics:
                 'configuration_validation': self._validate_configuration()
             }
 
-            # Calculate overall score
             overall_score = self._calculate_security_score(diagnostics)
             diagnostics['overall_security_score'] = overall_score
 
-            # Overall status
             if overall_score >= 90:
                 overall_status = 'excellent'
             elif overall_score >= 70:
@@ -84,7 +82,6 @@ class SecureDiagnostics:
         """Check general system health"""
         health_checks: Dict[str, Any] = {}
 
-        # Disk space
         try:
             home_dir = Path.home()
             disk = shutil.disk_usage(home_dir)
@@ -96,7 +93,6 @@ class SecureDiagnostics:
         except Exception as e:
             health_checks['disk_space'] = {'status': 'error', 'error': str(e)}
 
-        # Memory
         try:
             import psutil
             mem = psutil.virtual_memory()
@@ -108,10 +104,8 @@ class SecureDiagnostics:
         except ImportError:
             health_checks['memory'] = {'status': 'unknown', 'note': 'psutil not available'}
 
-        # Conda disponible
         health_checks['conda'] = self._check_conda_availability()
 
-        # Critical directories
         health_checks['directory_permissions'] = self._check_critical_directories()
 
         return health_checks

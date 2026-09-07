@@ -74,8 +74,6 @@ Available Options:
         except ValueError:
             return -1
 
-    # ── Handlers ────────────────────────────────────────────
-
     def handle_list_environments(self):
         print("\nListing environments...")
         result = self.svc.list_environments()
@@ -274,8 +272,6 @@ Available Options:
         except (ValueError, IndexError):
             print("Invalid selection")
         self._wait()
-
-    # ── Shared helper methods ──────────────────────
 
     def _select_env(self, environments: List[str]) -> Optional[str]:
         from nebulaforge.core.cli_helpers import select_environment
