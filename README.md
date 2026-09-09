@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![Tests](https://github.com/Morphilab/nebulaforge/actions/workflows/tests.yml/badge.svg)](https://github.com/Morphilab/nebulaforge/actions)
 [![codecov](https://codecov.io/gh/Morphilab/nebulaforge/branch/main/graph/badge.svg)](https://codecov.io/gh/Morphilab/nebulaforge)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/Morphilab/nebulaforge/releases)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue)](https://github.com/Morphilab/nebulaforge/releases)
 [![Security: Bandit](https://img.shields.io/badge/security-bandit-yellow)](https://github.com/PyCQA/bandit)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000)](https://github.com/astral-sh/ruff)
 [![Mypy checked](https://img.shields.io/badge/mypy-checked-blue)](http://mypy-lang.org/)
