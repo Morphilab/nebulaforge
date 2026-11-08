@@ -221,11 +221,12 @@ NEBULAFORGE_RUN_CONDA_INTEGRATION=1 uv run --no-sync pytest tests/test_conda_int
 ```
 
 CI aplica las comprobaciones críticas de `flake8` (`E9,F63,F7,F82`), `mypy`, la suite completa en
-Python 3.12, un umbral de cobertura del 60 % (`--cov-fail-under=60`, objetivo de patch de Codecov
-del 80 %) y análisis bloqueantes de Bandit/Safety. `ruff` (configurado en `pyproject.toml`) es el
-linter de estilo recomendado para desarrollo local. El smoke test con Conda real se ejecuta en el
-workflow manual `Conda Integration` (`.github/workflows/integration.yml`) y forma parte de la
-lista de comprobación de release.
+Python 3.12, un umbral de cobertura del 60 % (`--cov-fail-under=60`) y análisis bloqueantes de
+Bandit/Safety. La subida a Codecov es opcional: se ejecuta cuando el secreto de repositorio
+`CODECOV_TOKEN` está configurado y usa el objetivo de patch de `codecov.yml` (80 %). `ruff`
+(configurado en `pyproject.toml`) es el linter de estilo recomendado para desarrollo local. El
+smoke test con Conda real se ejecuta en el workflow manual `Conda Integration`
+(`.github/workflows/integration.yml`) y forma parte de la lista de comprobación de release.
 
 ---
 
