@@ -2,8 +2,9 @@
 Tests for core/audit_logger.py
 """
 
+import stat
 from unittest.mock import MagicMock
-from pathlib import Path
+
 from nebulaforge.core.audit_logger import AuditLogger
 
 
@@ -119,3 +120,18 @@ def test_audit_entry_has_previous_hash(tmp_path):
     for entry in logs:
         assert 'previous_hash' in entry
         assert len(entry['previous_hash']) == 64
+
+
+def test_audit_files_are_owner_only(tmp_path):
+    cm = _make_config(tmp_path)
+    al = AuditLogger(cm)
+    al.log_secure_action('action1', 'target1', 'success')
+
+    log_dir = tmp_path / 'logs'
+    for path in (
+        log_dir / 'security_audit.log',
+        log_dir / 'system_events.log',
+        log_dir / 'security_audit.lasthash',
+        log_dir / 'system_events.lasthash',
+    ):
+        assert stat.S_IMODE(path.stat().st_mode) == 0o600

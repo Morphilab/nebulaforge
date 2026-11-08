@@ -1,5 +1,5 @@
 """
-Tests para core/security_models.py
+Tests for core/security_models.py
 """
 
 from nebulaforge.core.security_models import SecurityProfile

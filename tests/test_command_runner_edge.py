@@ -1,5 +1,5 @@
 """
-Tests para utils/command_runner.py — edge cases
+Tests for utils/command_runner.py — edge cases
 """
 
 from unittest.mock import MagicMock

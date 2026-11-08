@@ -1,8 +1,11 @@
 """
-Tests para plugins/base_plugin.py
+Tests for plugins/base_plugin.py
 """
 
 from unittest.mock import MagicMock
+
+import pytest
+
 from nebulaforge.plugins.base_plugin import BasePlugin
 
 
@@ -85,3 +88,20 @@ def test_check_dependencies_does_not_use_dunder_import():
     src = open(bp.__file__, encoding='utf-8').read()
     assert '__import__' not in src
     assert 'importlib.util.find_spec' in src
+
+
+def test_plugins_have_no_type_ignores():
+    """Regression: keep the plugin package free of type-ignore debt."""
+    from pathlib import Path
+
+    import nebulaforge.plugins as plugins_pkg
+
+    for source_file in Path(plugins_pkg.__file__).parent.glob('*.py'):
+        source = source_file.read_text(encoding='utf-8')
+        assert '# type: ignore' not in source, f'{source_file.name} still has type: ignore'
+
+
+def test_require_command_runner_raises_without_runner():
+    p = SimplePlugin(MagicMock(), MagicMock())
+    with pytest.raises(RuntimeError):
+        p.require_command_runner()

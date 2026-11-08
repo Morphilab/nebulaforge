@@ -1,5 +1,5 @@
 """
-Tests para core/error_handler.py
+Tests for core/error_handler.py
 """
 
 from unittest.mock import MagicMock

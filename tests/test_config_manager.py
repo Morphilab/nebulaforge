@@ -2,6 +2,7 @@
 Tests for ConfigManager
 """
 
+import stat
 from pathlib import Path
 
 from nebulaforge.core.config_manager import ConfigManager
@@ -13,7 +14,7 @@ def test_config_default_values(tmp_path, monkeypatch):
     config_path = tmp_path / '.nebulaforge' / 'config' / 'config.yaml'
     cm = ConfigManager(config_path=config_path)
 
-    assert cm.get('core.production_mode') is True
+    assert cm.get('core.production_mode') is False
     assert cm.get('security.security_level') == 'medium'
     assert cm.get('nonexistent.key', 'default') == 'default'
 
@@ -49,4 +50,13 @@ def test_merge_configs_user_overrides_default(tmp_path, monkeypatch):
 
     cm.set('core.max_command_timeout', 600)
     assert cm.get('core.max_command_timeout') == 600
-    assert cm.get('core.production_mode') is True
+    assert cm.get('core.production_mode') is False
+
+
+def test_config_file_is_owner_only(tmp_path, monkeypatch):
+    monkeypatch.setattr(Path, 'home', lambda: tmp_path)
+
+    config_path = tmp_path / '.nebulaforge' / 'config' / 'config.yaml'
+    ConfigManager(config_path=config_path)
+
+    assert stat.S_IMODE(config_path.stat().st_mode) == 0o600

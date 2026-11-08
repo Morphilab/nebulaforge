@@ -1,5 +1,5 @@
 """
-Tests para SecureCommandRunner
+Tests for SecureCommandRunner
 """
 
 from pathlib import Path

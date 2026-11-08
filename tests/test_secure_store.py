@@ -1,5 +1,5 @@
 """
-Tests para core/secure_store.py
+Tests for core/secure_store.py
 """
 
 import time

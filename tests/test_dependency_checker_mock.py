@@ -1,5 +1,5 @@
 """
-Tests para core/dependency_checker.py (con mock de command_runner)
+Tests for core/dependency_checker.py (with mocked command_runner)
 """
 
 from unittest.mock import MagicMock

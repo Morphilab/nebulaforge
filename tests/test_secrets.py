@@ -1,9 +1,8 @@
 """
-Tests para core/secrets.py
+Tests for core/secrets.py
 """
 
-import json
-from pathlib import Path
+import stat
 
 from nebulaforge.core.secrets import SecureCredentials
 
@@ -56,8 +55,8 @@ def test_different_passwords_fail(tmp_path):
     sc = SecureCredentials(store_path, 'rightpass')
     sc.store('pypi', {'username': 'alice', 'password': 'secret'})
     sc_wrong = SecureCredentials(store_path, 'wrongpass')
-    from cryptography.fernet import InvalidToken
     import pytest
+    from cryptography.fernet import InvalidToken
     with pytest.raises(InvalidToken):
         sc_wrong.retrieve('pypi')
 
@@ -76,3 +75,12 @@ def test_no_password_raises(tmp_path):
     import pytest
     with pytest.raises(RuntimeError, match='Master password not set'):
         sc.store('test', {'key': 'value'})
+
+
+def test_salt_and_store_are_owner_only(tmp_path):
+    store_path = tmp_path / 'creds.enc'
+    sc = SecureCredentials(store_path, 'mypassword')
+    sc.store('pypi', {'username': 'alice', 'password': 'secret'})
+
+    assert stat.S_IMODE(store_path.stat().st_mode) == 0o600
+    assert stat.S_IMODE(store_path.with_suffix('.salt').stat().st_mode) == 0o600

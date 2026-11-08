@@ -1,5 +1,5 @@
 """
-Tests para core/session.py
+Tests for core/session.py
 """
 
 import time

@@ -1,5 +1,5 @@
 """
-Tests de edge cases para SecurityValidator
+Edge-case tests for SecurityValidator
 """
 
 from nebulaforge.core.security_validator import SecurityValidator
@@ -73,4 +73,6 @@ def test_validate_filename():
     assert v.validate_filename('') is False
     assert v.validate_filename(None) is False
     assert v.validate_filename(123) is False
+    assert v.validate_filename('.') is False
+    assert v.validate_filename('..') is False
     assert v.validate_filename('a' * 256) is False

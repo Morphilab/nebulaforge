@@ -7,6 +7,7 @@ profile's validation_strictness field.
 """
 import pytest
 
+from nebulaforge.core.config_manager import ConfigManager
 from nebulaforge.core.security_models import SecurityProfile
 from nebulaforge.core.security_validator import SecurityValidator
 
@@ -43,6 +44,15 @@ def test_paranoid_rejects_env_starting_with_digit():
 def test_low_accepts_dot_in_env_name():
     v = _make_validator("low")
     assert v.validate_env_name("env.with.dots") is True
+    assert v.validate_env_name("..") is False
+
+
+def test_validate_existing_env_name_allows_reserved_names():
+    v = _make_validator("medium")
+    assert v.validate_env_name("base") is False
+    assert v.validate_existing_env_name("base") is True
+    assert v.validate_existing_env_name("../escape") is False
+    assert v.validate_existing_env_name("..") is False
 
 
 def test_medium_rejects_dot_in_env_name():
@@ -109,3 +119,38 @@ def test_unknown_strictness_falls_back_to_medium():
     # Should behave like medium (default fallback)
     assert v.validate_env_name("env.with.dots") is False
     assert v.validate_package_name("exploit") is False
+
+
+def test_validator_reads_profile_at_call_time(tmp_path, monkeypatch):
+    """A runtime security-level change must be visible without rebuilding the validator."""
+    from pathlib import Path
+
+    monkeypatch.setattr(Path, 'home', lambda: tmp_path)
+    cm = ConfigManager(config_path=tmp_path / 'config.yaml')
+    validator = SecurityValidator(config_manager=cm)
+
+    cm.set('security.security_level', 'low')
+    assert validator.validate_env_name('prod') is True
+
+    cm.set('security.security_level', 'high')
+    assert validator.validate_env_name('prod') is False
+
+    cm.set('security.security_level', 'low')
+    assert validator.validate_env_name('prod') is True
+
+
+def test_backup_manager_validator_follows_runtime_profile(tmp_path, monkeypatch):
+    """BackupManager must not keep a stale validator after a profile change."""
+    from pathlib import Path
+    from unittest.mock import MagicMock
+
+    from nebulaforge.core.backup_manager import BackupManager
+
+    monkeypatch.setattr(Path, 'home', lambda: tmp_path)
+    cm = ConfigManager(config_path=tmp_path / 'config.yaml')
+    cm.set('security.security_level', 'low')
+    bm = BackupManager(cm, MagicMock(), audit_logger=MagicMock())
+
+    assert bm.validator.validate_env_name('prod') is True
+    cm.set('security.security_level', 'high')
+    assert bm.validator.validate_env_name('prod') is False

@@ -1,5 +1,5 @@
 """
-Tests para plugins/security_scanner.py (con mock de command_runner)
+Tests for plugins/security_scanner.py (with mocked command_runner)
 """
 
 from unittest.mock import MagicMock, PropertyMock

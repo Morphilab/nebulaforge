@@ -1,5 +1,5 @@
 """
-Tests para plugins/health_check.py (con mock de command_runner)
+Tests for plugins/health_check.py (with mocked command_runner)
 """
 
 from unittest.mock import MagicMock
@@ -52,7 +52,7 @@ def test_check_dependencies_no_conflicts():
     cr = MagicMock()
     cr.run_secure_command.return_value = (True, '[{"name":"numpy","version":"1.21.0"}]')
     hc = _make_health_check(cr)
-    result = hc.check_dependencies('test_env')
+    result = hc.check_environment_dependencies('test_env')
     assert 'conflicts' in result
 
 

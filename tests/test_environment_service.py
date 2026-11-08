@@ -12,6 +12,7 @@ def _mock_service():
          patch('nebulaforge.core.environment_service.SecurityValidator') as MockSV:
         sv_instance = MockSV.return_value
         sv_instance.validate_env_name.return_value = True
+        sv_instance.validate_existing_env_name.return_value = True
         sv_instance.validate_package_list.return_value = (True, [])
         sv_instance.validate_filename.return_value = True
 
@@ -25,6 +26,10 @@ def _mock_service():
         sm_instance.clone_environment.return_value = (True, 'Cloned')
         sm_instance.export_environment.return_value = (True, 'Exported')
         sm_instance.import_environment.return_value = (True, 'Imported')
+        sm_instance.create_backup.return_value = (True, 'Backup created')
+        sm_instance.list_backups.return_value = []
+        sm_instance.restore_backup.return_value = (True, 'Restored')
+        sm_instance.set_production_mode.return_value = True
         sm_instance.run_security_diagnostics.return_value = {'overall_security_score': 85, 'overall_status': 'good'}
         sm_instance.get_audit_trail.return_value = []
         sm_instance.change_security_level.return_value = True
@@ -191,7 +196,7 @@ def test_clone_environment():
 
 def test_clone_environment_invalid_source():
     svc, sm, sv = _mock_service()
-    sv.validate_env_name.side_effect = lambda n: n == 'target'
+    sv.validate_existing_env_name.side_effect = lambda n: n == 'target'
     svc.validator = sv
     result = svc.clone_environment('bad!', 'target')
     assert result.success is False
@@ -270,6 +275,7 @@ def test_get_available_profiles():
 def test_change_security_level_valid():
     svc, sm, sv = _mock_service()
     svc.sm = sm
+    svc.validator = sv
     result = svc.change_security_level('high')
     assert result.success is True
 
@@ -331,3 +337,55 @@ def test_require_confirmation_delegates():
     sm.require_confirmation_for.return_value = True
     svc.sm = sm
     assert svc.require_confirmation_for('delete', 'env1') is True
+
+
+def test_install_packages_passes_conflict_check_flag():
+    svc, sm, sv = _mock_service()
+    svc.sm = sm
+    svc.validator = sv
+    result = svc.install_packages('myenv', ['numpy'], conflict_check=False)
+    assert result.success is True
+    sm.install_packages.assert_called_once_with('myenv', ['numpy'], conflict_check=False, confirmed=False)
+
+
+def test_create_backup_delegates():
+    svc, sm, sv = _mock_service()
+    svc.sm = sm
+    svc.validator = sv
+    result = svc.create_backup('myenv', 'manual')
+    assert result.success is True
+    sm.create_backup.assert_called_once_with('myenv', 'manual')
+
+
+def test_create_backup_invalid_name():
+    svc, sm, sv = _mock_service()
+    sv.validate_existing_env_name.return_value = False
+    svc.validator = sv
+    result = svc.create_backup('bad name!')
+    assert result.success is False
+
+
+def test_list_backups_delegates():
+    svc, sm, sv = _mock_service()
+    sm.list_backups.return_value = [{'env_name': 'env1'}]
+    svc.sm = sm
+    result = svc.list_backups()
+    assert result.success is True
+    assert result.data == [{'env_name': 'env1'}]
+
+
+def test_restore_backup_delegates():
+    svc, sm, sv = _mock_service()
+    svc.sm = sm
+    result = svc.restore_backup('backup.yaml', 'myenv')
+    assert result.success is True
+    sm.restore_backup.assert_called_once_with('backup.yaml', 'myenv', confirmed=False)
+
+
+def test_set_production_mode_delegates():
+    svc, sm, sv = _mock_service()
+    svc.sm = sm
+    result = svc.set_production_mode(False)
+    assert result.success is True
+    assert 'disabled' in result.message
+    sm.set_production_mode.assert_called_once_with(False)
