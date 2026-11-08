@@ -1,0 +1,9 @@
+security:
+  ignore-vulnerabilities:
+    SFTY-20260902-58666:
+      reason: >-
+        nltk is pulled in transitively by the Safety dev tool itself; the
+        advisory has no fixed release yet and nltk is not part of the shipped
+        runtime dependency set. Remove this exception when a fixed release or
+        a Safety version without the nltk dependency is available.
+      expires: "2027-01-31"

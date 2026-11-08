@@ -36,6 +36,17 @@ env/
 *.log
 backups/
 logs/
+.env
+.env.*
+
+# Generic local secrets (never commit)
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.yaml
+servers.yaml
+credentials.*
 
 # IDE
 .vscode/
@@ -49,7 +60,12 @@ Thumbs.db
 
 # Coverage & cache
 .coverage
+.coverage.*
+.pytest_cache/
+.ruff_cache/
 .mypy_cache/
-
-# Tests temporales
-tests/__pycache__/
+.tox/
+.nox/
+coverage.xml
+htmlcov/
+bandit-report.json

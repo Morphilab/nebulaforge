@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -16,43 +19,42 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.12"]
 
     steps:
       - uses: actions/checkout@v7
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v7
+      # setup-uv v10.2.0 pinned SHA, uv 0.12.24
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
         with:
+          version: "0.12.24"
           python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          cache-python: true
+          cache-dependency-glob: uv.lock
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest pytest-cov rich pyyaml psutil packaging cryptography
+      - name: Verify uv.lock is up to date
+        run: uv lock --check
 
-      - name: Install NebulaForge editable
-        run: pip install -e .
+      - name: Install (app + dev)
+        run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
 
       - name: Run linting (flake8)
         run: |
-          pip install flake8
-          flake8 nebulaforge/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          uv run --no-sync flake8 nebulaforge/ --count --select=E9,F63,F7,F82 --show-source --statistics
 
       - name: Run type checking (mypy)
         run: |
-          pip install mypy
-          mypy nebulaforge/ --ignore-missing-imports --no-error-summary || true
+          uv run --no-sync mypy nebulaforge/ --ignore-missing-imports
 
       - name: Run tests with coverage
-        run: pytest tests/ -v --tb=short --cov=nebulaforge --cov-report=xml --cov-report=term-missing
+        run: uv run --no-sync pytest tests/ -v --tb=short --cov=nebulaforge --cov-report=xml --cov-report=term-missing --cov-fail-under=60
 
       - name: Upload coverage
         uses: codecov/codecov-action@v7
-        if: matrix.python-version == '3.12'
         with:
           file: ./coverage.xml
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
   security:
     name: Security scanning
@@ -60,25 +62,28 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Set up Python
-        uses: actions/setup-python@v7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
         with:
+          version: "0.12.24"
           python-version: "3.12"
+          enable-cache: true
+          cache-python: true
+          cache-dependency-glob: uv.lock
 
-      - name: Install NebulaForge and dev tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-          pip install bandit safety
+      - name: Verify uv.lock is up to date
+        run: uv lock --check
+
+      - name: Install app and dev tools
+        run: uv sync --frozen --extra dev --python "3.12"
 
       - name: Run Bandit (SAST)
         run: |
-          bandit -r nebulaforge/ -f json -o bandit-report.json || true
-          bandit -r nebulaforge/ -ll
+          uv run --with bandit bandit -r nebulaforge/ -f json -o bandit-report.json || true
+          uv run --with bandit bandit -r nebulaforge/ -ll
 
-      - name: Run Safety (dependency check)
+      - name: Run Safety (dependency check, blocking)
         run: |
-          safety check --json || true
+          uv run --no-sync safety check --policy-file .safety-policy.yml --output json
 
       - name: Upload Bandit report
         if: always()

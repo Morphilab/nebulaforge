@@ -1,0 +1,43 @@
+name: Conda Integration
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  conda-integration:
+    name: Real Conda smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # setup-miniconda v3.3.0 pinned SHA
+      - uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167
+        with:
+          miniconda-version: "latest"
+          auto-update-conda: true
+
+      # setup-uv v10.2.0 pinned SHA, uv 0.12.24 (same as tests.yml)
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          version: "0.12.24"
+          python-version: "3.12"
+          enable-cache: true
+          cache-python: true
+          cache-dependency-glob: uv.lock
+
+      - name: Verify uv.lock is up to date
+        run: uv lock --check
+
+      - name: Install (app + dev)
+        run: uv sync --frozen --extra dev --python "3.12"
+
+      - name: Run real-Conda integration test
+        env:
+          NEBULAFORGE_RUN_CONDA_INTEGRATION: "1"
+        run: uv run --no-sync pytest tests/test_conda_integration.py -v
