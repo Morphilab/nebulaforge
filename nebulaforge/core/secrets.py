@@ -67,6 +67,7 @@ class SecureCredentials(EncryptedStore):
 
         new_salt = os.urandom(16)
         new_salt_path.write_bytes(new_salt)
+        new_salt_path.chmod(0o600)
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(), length=32,
             salt=new_salt, iterations=600_000

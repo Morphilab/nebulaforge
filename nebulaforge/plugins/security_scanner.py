@@ -42,7 +42,7 @@ class SecurityScannerPlugin(BasePlugin):
         }
 
     def execute(self, command: str, **kwargs) -> Dict[str, Any]:
-        """Ejecutar comando del plugin"""
+        """Execute a plugin command"""
         if command == 'scan_vulnerabilities':
             return self.scan_vulnerabilities(**kwargs)
         elif command == 'check_malware':
@@ -64,7 +64,7 @@ class SecurityScannerPlugin(BasePlugin):
         }
 
         try:
-            success, output = self.command_runner.run_secure_command(  # type: ignore[union-attr]
+            success, output = self.require_command_runner().run_secure_command(
                 ['conda', 'list', '-n', env_name, '--json'], 'scan_vulnerabilities'
             )
 
@@ -97,7 +97,7 @@ class SecurityScannerPlugin(BasePlugin):
         return scan_results
 
     def check_malware(self, env_name: str) -> Dict[str, Any]:
-        """Buscar paquetes potencialmente maliciosos"""
+        """Search for potentially malicious packages"""
         malware_results: Dict[str, Any] = {
             'environment': env_name,
             'suspicious_packages': [],
@@ -106,7 +106,7 @@ class SecurityScannerPlugin(BasePlugin):
         }
 
         try:
-            success, output = self.command_runner.run_secure_command(  # type: ignore[union-attr]
+            success, output = self.require_command_runner().run_secure_command(
                 ['conda', 'list', '-n', env_name, '--json'], 'check_malware'
             )
 
@@ -173,7 +173,7 @@ class SecurityScannerPlugin(BasePlugin):
         }
 
         try:
-            success, output = self.command_runner.run_secure_command(  # type: ignore[union-attr]
+            success, output = self.require_command_runner().run_secure_command(
                 ['conda', 'info', '--json'], 'audit_permissions'
             )
 
@@ -207,7 +207,7 @@ class SecurityScannerPlugin(BasePlugin):
         return audit_results
 
     def verify_integrity(self, env_name: str) -> Dict[str, Any]:
-        """Verificar integridad de paquetes"""
+        """Verify package integrity"""
         integrity_results: Dict[str, Any] = {
             'environment': env_name,
             'verified_packages': 0,
@@ -221,7 +221,7 @@ class SecurityScannerPlugin(BasePlugin):
         }
 
         try:
-            success, output = self.command_runner.run_secure_command(  # type: ignore[union-attr]
+            success, output = self.require_command_runner().run_secure_command(
                 ['conda', 'list', '-n', env_name, '--json'], 'verify_integrity'
             )
 

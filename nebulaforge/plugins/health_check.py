@@ -35,7 +35,7 @@ class HealthCheckPlugin(BasePlugin):
         if command == 'check_health':
             return self.check_health(**kwargs)
         elif command == 'check_dependencies':
-            return self.check_dependencies(**kwargs)
+            return self.check_environment_dependencies(**kwargs)
         elif command == 'check_performance':
             return self.check_performance(**kwargs)
         else:
@@ -75,7 +75,7 @@ class HealthCheckPlugin(BasePlugin):
 
         return health_info
 
-    def check_dependencies(self, env_name: str) -> Dict[str, Any]:  # type: ignore[override]
+    def check_environment_dependencies(self, env_name: str) -> Dict[str, Any]:
         """Verify dependencies and conflicts"""
         deps_info: Dict[str, Any] = {
             'environment': env_name,
@@ -85,7 +85,7 @@ class HealthCheckPlugin(BasePlugin):
         }
 
         try:
-            success, output = self.command_runner.run_secure_command(  # type: ignore[union-attr]
+            success, output = self.require_command_runner().run_secure_command(
                 ['conda', 'list', '-n', env_name, '--json'], 'check_dependencies'
             )
 
@@ -144,7 +144,7 @@ class HealthCheckPlugin(BasePlugin):
         check_result: Dict[str, Any] = {'status': 'unknown', 'total_packages': 0, 'broken_packages': 0, 'details': []}
 
         try:
-            success, output = self.command_runner.run_secure_command(  # type: ignore[union-attr]
+            success, output = self.require_command_runner().run_secure_command(
                 ['conda', 'list', '-n', env_name, '--json'], 'check_packages'
             )
 
@@ -173,7 +173,7 @@ class HealthCheckPlugin(BasePlugin):
         check_result: Dict[str, Any] = {'status': 'unknown', 'dependency_issues': []}
 
         try:
-            success, output = self.command_runner.run_secure_command(  # type: ignore[union-attr]
+            success, output = self.require_command_runner().run_secure_command(
                 ['conda', 'list', '-n', env_name, '--json'], 'check_dependencies'
             )
             if success:
@@ -206,7 +206,7 @@ class HealthCheckPlugin(BasePlugin):
         check_result: Dict[str, Any] = {'status': 'unknown', 'permission_issues': []}
 
         try:
-            success, output = self.command_runner.run_secure_command(  # type: ignore[union-attr]
+            success, output = self.require_command_runner().run_secure_command(
                 ['conda', 'info', '--json'], 'check_permissions'
             )
 
@@ -231,7 +231,7 @@ class HealthCheckPlugin(BasePlugin):
 
     def _check_environment_size(self, env_name: str) -> Dict[str, Any]:
         try:
-            success, output = self.command_runner.run_secure_command(  # type: ignore[union-attr]
+            success, output = self.require_command_runner().run_secure_command(
                 ['conda', 'info', '--json'], 'check_environment_size'
             )
             if success:
@@ -252,7 +252,7 @@ class HealthCheckPlugin(BasePlugin):
         try:
             import time
             start = time.time()
-            self.command_runner.run_secure_command(  # type: ignore[union-attr]
+            self.require_command_runner().run_secure_command(
                 ['conda', 'list', '-n', env_name, '--json'], 'check_load_time'
             )
             return round((time.time() - start) * 1000, 2)
@@ -262,7 +262,7 @@ class HealthCheckPlugin(BasePlugin):
     def _find_heavy_packages(self, env_name: str) -> List[str]:
         heavy = []
         try:
-            success, output = self.command_runner.run_secure_command(  # type: ignore[union-attr]
+            success, output = self.require_command_runner().run_secure_command(
                 ['conda', 'list', '-n', env_name, '--json'], 'find_heavy_packages'
             )
             if success:
@@ -286,6 +286,6 @@ class HealthCheckPlugin(BasePlugin):
     def _check_directory_permissions(self, directory: Path) -> bool:
         try:
             stat = directory.stat()
-            return (stat.st_mode & 0o022) == 0  # Solo propietario puede escribir
+            return (stat.st_mode & 0o022) == 0  # Only the owner should be able to write
         except Exception:
             return False

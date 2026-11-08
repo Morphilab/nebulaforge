@@ -32,6 +32,10 @@ class ConfigManager:
             try:
                 with open(self.config_path, encoding='utf-8') as f:
                     user_config = yaml.safe_load(f) or {}
+                try:
+                    self.config_path.chmod(0o600)
+                except OSError:
+                    pass
                 return self._merge_configs(default, user_config)
             except Exception:
                 return default
@@ -41,7 +45,7 @@ class ConfigManager:
 
     def _get_default_config(self) -> Dict[str, Any]:
         return {
-            'core': {'production_mode': True, 'max_command_timeout': 300},
+            'core': {'production_mode': False, 'max_command_timeout': 300},
             'security': {
                 'security_level': 'medium',
                 'require_confirmation': True,
@@ -69,6 +73,10 @@ class ConfigManager:
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
         with open(self.config_path, 'w', encoding='utf-8') as f:
             yaml.dump(config, f, default_flow_style=False, allow_unicode=True)
+        try:
+            self.config_path.chmod(0o600)
+        except Exception:
+            pass
 
     def get(self, key: str, default: Any = None) -> Any:
         keys = key.split('.')

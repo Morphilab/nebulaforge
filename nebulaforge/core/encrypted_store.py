@@ -44,10 +44,18 @@ class EncryptedStore:
     def _load_or_create_salt(self) -> bytes:
         salt_path = self.store_path.with_suffix('.salt')
         if salt_path.exists():
+            try:
+                salt_path.chmod(0o600)
+            except OSError:
+                pass
             return salt_path.read_bytes()
         salt = os.urandom(16)
         salt_path.parent.mkdir(parents=True, exist_ok=True)
         salt_path.write_bytes(salt)
+        try:
+            salt_path.chmod(0o600)
+        except OSError:
+            pass
         return salt
 
     def _get_fernet(self) -> Fernet:

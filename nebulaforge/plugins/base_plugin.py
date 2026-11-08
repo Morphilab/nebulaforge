@@ -55,6 +55,12 @@ class BasePlugin(ABC):
         except Exception:
             return False
 
+    def require_command_runner(self) -> SecureCommandRunner:
+        """Return the command runner or fail if the plugin was built without one."""
+        if self.command_runner is None:
+            raise RuntimeError("This plugin operation requires a command runner")
+        return self.command_runner
+
     def log_plugin_action(self, action: str, details: Dict[str, Any]) -> None:
         """Log plugin action to audit"""
         if self.audit_logger:

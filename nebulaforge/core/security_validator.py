@@ -83,15 +83,28 @@ class SecurityValidator:
         self.audit_logger = audit_logger
         self.profile = profile
 
-    def _strictness(self) -> str:
-        if self.profile is None and self.config_manager is not None:
+    def _current_profile(self) -> Optional[SecurityProfile]:
+        """Return the explicit profile or the current persisted profile.
+
+        When built with a ConfigManager, the profile is intentionally resolved
+        on every call instead of being cached. Long-lived TUI/interactive
+        sessions can change the security level at runtime, and every validator
+        in the process must observe the new policy immediately.
+        """
+        if self.profile is not None:
+            return self.profile
+        if self.config_manager is not None:
             try:
                 profile_name = self.config_manager.get('security.security_level', 'medium')
-                self.profile = self.config_manager.get_security_profile(profile_name)
+                return self.config_manager.get_security_profile(profile_name)
             except Exception:
-                self.profile = None
-        if self.profile is not None:
-            return getattr(self.profile, 'validation_strictness', None) or self.profile.level or 'medium'
+                return None
+        return None
+
+    def _strictness(self) -> str:
+        profile = self._current_profile()
+        if profile is not None:
+            return getattr(profile, 'validation_strictness', None) or profile.level or 'medium'
         return 'medium'
 
     def _env_pattern(self):
@@ -112,11 +125,26 @@ class SecurityValidator:
     def validate_env_name(self, env_name: str) -> bool:
         if not env_name or not isinstance(env_name, str):
             return False
+        if env_name in ('.', '..'):
+            return False
         if not self._env_pattern().match(env_name):
             return False
         if env_name.lower() in self._reserved_envs():
             return False
         return True
+
+    def validate_existing_env_name(self, env_name: str) -> bool:
+        """Validate an existing name for read-only operations such as backup.
+
+        Reserved names are rejected only when creating environments, so this
+        check deliberately uses the permissive low-strictness pattern while
+        still rejecting path-like or traversal names.
+        """
+        if not env_name or not isinstance(env_name, str):
+            return False
+        if env_name in ('.', '..'):
+            return False
+        return bool(_LOW_ENV_NAME_PATTERN.match(env_name))
 
     def validate_package_name(self, package_spec: str) -> bool:
         """Validate package name with optional version specifier (==, >=, <=, etc.)"""
@@ -154,5 +182,7 @@ class SecurityValidator:
     def validate_filename(self, filename: str) -> bool:
         """Validate filename (no path) for export"""
         if not filename or not isinstance(filename, str):
+            return False
+        if filename in ('.', '..'):
             return False
         return bool(self._filename_pattern().match(filename))

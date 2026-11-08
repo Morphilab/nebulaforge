@@ -2,9 +2,11 @@
 NebulaForge - Security profiles
 """
 
-# protected_envs guards operations on existing environments (confirmation
-# required; delete/modify blocked). Blocking reserved names at creation time
-# is a separate mechanism: SecurityValidator._STRICTNESS_RESERVED_ENVS.
+# protected_envs guards operations on existing environments. Write operations
+# (create/import/clone toward a protected name, install, update, delete, and
+# restore) are hard denials that confirmation cannot override. Blocking
+# reserved names at creation time is a separate mechanism:
+# SecurityValidator._STRICTNESS_RESERVED_ENVS.
 SECURITY_PROFILES = {
     'low': {
         'name': 'Low Security',

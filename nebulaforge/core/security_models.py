@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 
 @dataclass
 class SecurityProfile:
-    """Modelo tipado para perfiles de seguridad"""
+    """Typed model for security profiles"""
     name: str
     level: str
     description: str
@@ -22,7 +22,7 @@ class SecurityProfile:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'SecurityProfile':
-        """Crear instancia desde diccionario"""
+        """Create an instance from a dictionary"""
         return cls(
             name=data.get('name', ''),
             level=data.get('level', 'medium'),
@@ -37,7 +37,7 @@ class SecurityProfile:
         )
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convertir a diccionario"""
+        """Convert to a dictionary"""
         return {
             'name': self.name,
             'level': self.level,

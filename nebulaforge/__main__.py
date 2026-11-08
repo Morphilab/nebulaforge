@@ -41,7 +41,7 @@ def main() -> int:
         print("See README.md for full usage")
         return 0
     if command in CLI_COMMANDS:
-        cli = NebulaForgeCLI(production_mode=False)
+        cli = NebulaForgeCLI()
         return cli.run_from_args(sys.argv[1:])
 
     print(f"Unknown command: {command}")

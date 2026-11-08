@@ -27,7 +27,7 @@ class NebulaForgeTUI:
 
     def __init__(self):
         self.console = Console()
-        self.svc = EnvironmentService(production_mode=False)
+        self.svc = EnvironmentService()
 
     def run(self) -> int:
         try:
@@ -68,9 +68,13 @@ class NebulaForgeTUI:
 
     def show_welcome(self):
         profile = self.svc.get_current_profile_name()
+        mode = "ON (read-only)" if self.svc.is_production_mode() else "off"
         welcome = Panel(
-            Text(f"NebulaForge v{__version__}\nSecure Conda Environment Manager\nSecurity Level: {profile}",
-                 justify="center"),
+            Text(
+                f"NebulaForge v{__version__}\nSecure Conda Environment Manager\n"
+                f"Security Level: {profile}\nProduction Mode: {mode}",
+                justify="center",
+            ),
             style="blue", box=box.DOUBLE
         )
         self.console.print("\n", welcome, "\n")
@@ -146,12 +150,12 @@ class NebulaForgeTUI:
                 self._wait()
                 return
 
-        if not Confirm.ask("Create the environment?", default=True):
+        if not self._confirm_mutation('create', env_name, "Create the environment?", default=True):
             self.console.print("[yellow]Cancelled[/yellow]")
             return
 
         with self.console.status(f"[bold green]Creating environment '{env_name}'..."):
-            result = self.svc.create_environment(env_name, python_version, packages)
+            result = self.svc.create_environment(env_name, python_version, packages, confirmed=True)
         self.console.print(f"[green]{result.message}[/green]" if result.success
                            else f"[red]{result.message}[/red]")
         self._wait()
@@ -219,13 +223,13 @@ class NebulaForgeTUI:
         if not env_name:
             return
 
-        if not Confirm.ask(f"[red]Delete the environment '{env_name}'?[/red]"):
+        if not self._confirm_mutation('delete', env_name, f"[red]Delete the environment '{env_name}'?[/red]"):
             self.console.print("[yellow]Cancelled[/yellow]")
             return
 
         create_backup = Confirm.ask("Create backup before deleting?", default=True)
         with self.console.status(f"[bold green]Deleting '{env_name}'..."):
-            result = self.svc.delete_environment(env_name, create_backup)
+            result = self.svc.delete_environment(env_name, create_backup, confirmed=True)
         self.console.print(f"[green]{result.message}[/green]" if result.success
                            else f"[red]{result.message}[/red]")
         self._wait()
@@ -247,11 +251,11 @@ class NebulaForgeTUI:
             self._wait()
             return
 
-        if not Confirm.ask(f"Clone '{source}' -> '{target}'?"):
+        if not self._confirm_mutation('create', target, f"Clone '{source}' -> '{target}'?"):
             return
 
         with self.console.status("[bold green]Cloning..."):
-            result = self.svc.clone_environment(source, target)
+            result = self.svc.clone_environment(source, target, confirmed=True)
         self.console.print(f"[green]{result.message}[/green]" if result.success
                            else f"[red]{result.message}[/red]")
         self._wait()
@@ -295,11 +299,11 @@ class NebulaForgeTUI:
             self._wait()
             return
 
-        if not Confirm.ask(f"Import as '{env_name}'?"):
+        if not self._confirm_mutation('create', env_name, f"Import as '{env_name}'?"):
             return
 
         with self.console.status("[bold green]Importing..."):
-            result = self.svc.import_environment(input_file, env_name)
+            result = self.svc.import_environment(input_file, env_name, confirmed=True)
         self.console.print(f"[green]{result.message}[/green]" if result.success
                            else f"[red]{result.message}[/red]")
         self._wait()
@@ -340,6 +344,12 @@ class NebulaForgeTUI:
             self.console.print("[red]Invalid selection[/red]")
         self._wait()
 
+    def _confirm_mutation(self, operation: str, target: str, prompt: str, default: bool = False) -> bool:
+        """Ask for confirmation when the active policy requires it."""
+        if not self.svc.require_confirmation_for(operation, target):
+            return True
+        return Confirm.ask(prompt, default=default)
+
     def _select_env(self, environments: List[str], action: str = "") -> Optional[str]:
         from nebulaforge.core.cli_helpers import select_environment
         return select_environment(environments, action)
@@ -374,8 +384,11 @@ class NebulaForgeTUI:
         if not result.success:
             self.console.print(f"[red]{result.message}[/red]")
             return
+        if not self._confirm_mutation('modify', env_name, f"Install packages in '{env_name}'?", default=True):
+            self.console.print("[yellow]Cancelled[/yellow]")
+            return
         with self.console.status(f"[bold green]Installing in {env_name}..."):
-            result = self.svc.install_packages(env_name, packages)
+            result = self.svc.install_packages(env_name, packages, confirmed=True)
         self.console.print(f"[green]{result.message}[/green]" if result.success
                            else f"[red]{result.message}[/red]")
         self._wait()
@@ -383,8 +396,11 @@ class NebulaForgeTUI:
     def _update_pkgs(self, env_name: str) -> None:
         pkgs_input = Prompt.ask("Packages to update (empty = all)")
         packages = pkgs_input.split() if pkgs_input else None
+        if not self._confirm_mutation('modify', env_name, f"Update packages in '{env_name}'?", default=True):
+            self.console.print("[yellow]Cancelled[/yellow]")
+            return
         with self.console.status("[bold green]Updating..."):
-            result = self.svc.update_packages(env_name, packages)
+            result = self.svc.update_packages(env_name, packages, confirmed=True)
         self.console.print(f"[green]{result.message}[/green]" if result.success
                            else f"[red]{result.message}[/red]")
         self._wait()

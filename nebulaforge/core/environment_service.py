@@ -21,7 +21,7 @@ class EnvironmentService:
     """Shared service encapsulating all business logic.
     Interfaces (CLI/TUI) only handle input/output and menus."""
 
-    def __init__(self, production_mode: bool = False):
+    def __init__(self, production_mode: Optional[bool] = None):
         self.sm = SecurityManager(production_mode=production_mode)
         self.validator = SecurityValidator(
             config_manager=self.sm.config_manager,
@@ -53,7 +53,8 @@ class EnvironmentService:
         return ServiceResult(True, f"{len(envs)} environments found", envs)
 
     def create_environment(self, name: str, python_version: str = "3.9",
-                           packages: Optional[List[str]] = None) -> ServiceResult:
+                           packages: Optional[List[str]] = None,
+                           confirmed: bool = False) -> ServiceResult:
         if not self.validate_env_name(name):
             return ServiceResult(False, "Invalid environment name")
 
@@ -67,7 +68,7 @@ class EnvironmentService:
             'name': name,
             'python_version': python_version,
             'packages': pkgs,
-        })
+        }, confirmed=confirmed)
         return ServiceResult(success, message)
 
     def get_environment_info(self, env_name: str) -> ServiceResult:
@@ -76,7 +77,9 @@ class EnvironmentService:
             return ServiceResult(False, info['error'], info)
         return ServiceResult(True, "", info)
 
-    def install_packages(self, env_name: str, packages: List[str]) -> ServiceResult:
+    def install_packages(self, env_name: str, packages: List[str],
+                         conflict_check: bool = True,
+                         confirmed: bool = False) -> ServiceResult:
         if not self.validate_env_name(env_name):
             return ServiceResult(False, "Invalid environment name")
 
@@ -84,14 +87,17 @@ class EnvironmentService:
         if not result.success:
             return result
 
-        success, message = self.sm.install_packages(env_name, packages)
+        success, message = self.sm.install_packages(
+            env_name, packages, conflict_check=conflict_check, confirmed=confirmed
+        )
         return ServiceResult(success, message)
 
-    def update_packages(self, env_name: str, packages: Optional[List[str]] = None) -> ServiceResult:
+    def update_packages(self, env_name: str, packages: Optional[List[str]] = None,
+                        confirmed: bool = False) -> ServiceResult:
         if not self.validate_env_name(env_name):
             return ServiceResult(False, "Invalid environment name")
 
-        success, message = self.sm.update_packages(env_name, packages)
+        success, message = self.sm.update_packages(env_name, packages, confirmed=confirmed)
         return ServiceResult(success, message)
 
     def list_packages(self, env_name: str) -> ServiceResult:
@@ -100,22 +106,47 @@ class EnvironmentService:
             return ServiceResult(False, info['error'])
         return ServiceResult(True, "", info.get('packages', []))
 
-    def delete_environment(self, env_name: str, create_backup: bool = True) -> ServiceResult:
+    def delete_environment(self, env_name: str, create_backup: bool = True,
+                           confirmed: bool = False) -> ServiceResult:
         if not self.validate_env_name(env_name):
             return ServiceResult(False, "Invalid environment name")
 
-        success, message = self.sm.delete_environment(env_name, create_backup)
+        success, message = self.sm.delete_environment(env_name, create_backup, confirmed=confirmed)
         return ServiceResult(success, message)
 
-    def clone_environment(self, source: str, target: str) -> ServiceResult:
-        if not self.validate_env_name(source) or not self.validate_env_name(target):
+    def create_backup(self, env_name: str, description: str = "") -> ServiceResult:
+        if not self.validator.validate_existing_env_name(env_name):
+            return ServiceResult(False, "Invalid environment name")
+        success, message = self.sm.create_backup(env_name, description)
+        return ServiceResult(success, message)
+
+    def list_backups(self, env_name: Optional[str] = None) -> ServiceResult:
+        backups = self.sm.list_backups(env_name)
+        return ServiceResult(True, f"{len(backups)} backups found", backups)
+
+    def restore_backup(self, backup_file: str, env_name: Optional[str] = None,
+                       confirmed: bool = False) -> ServiceResult:
+        success, message = self.sm.restore_backup(backup_file, env_name, confirmed=confirmed)
+        return ServiceResult(success, message)
+
+    def set_production_mode(self, enabled: bool) -> ServiceResult:
+        success = self.sm.set_production_mode(enabled)
+        state = "enabled" if enabled else "disabled"
+        return ServiceResult(success, f"Production mode {state}")
+
+    def is_production_mode(self) -> bool:
+        return bool(getattr(self.sm, 'production_mode', False))
+
+    def clone_environment(self, source: str, target: str, confirmed: bool = False) -> ServiceResult:
+        if not (self.validator.validate_existing_env_name(source)
+                and self.validate_env_name(target)):
             return ServiceResult(False, "Invalid environment name")
 
-        success, message = self.sm.clone_environment(source, target)
+        success, message = self.sm.clone_environment(source, target, confirmed=confirmed)
         return ServiceResult(success, message)
 
     def export_environment(self, env_name: str, filename: str) -> ServiceResult:
-        if not self.validate_env_name(env_name):
+        if not self.validator.validate_existing_env_name(env_name):
             return ServiceResult(False, "Invalid environment name")
 
         if not self.validate_filename(filename):
@@ -124,11 +155,12 @@ class EnvironmentService:
         success, message = self.sm.export_environment(env_name, filename)
         return ServiceResult(success, message)
 
-    def import_environment(self, filepath: Path, env_name: Optional[str] = None) -> ServiceResult:
+    def import_environment(self, filepath: Path, env_name: Optional[str] = None,
+                            confirmed: bool = False) -> ServiceResult:
         if not filepath.exists() or not filepath.is_file():
             return ServiceResult(False, f"File not found: {filepath}")
 
-        success, message = self.sm.import_environment(filepath, env_name)
+        success, message = self.sm.import_environment(filepath, env_name, confirmed=confirmed)
         return ServiceResult(success, message)
 
     def run_diagnostics(self) -> ServiceResult:

@@ -13,7 +13,7 @@ class NebulaForgeInteractiveCLI:
     """Interactive CLI for NebulaForge — I/O only, logic delegated to EnvironmentService"""
 
     def __init__(self):
-        self.svc = EnvironmentService(production_mode=False)
+        self.svc = EnvironmentService()
 
     def run(self) -> int:
         try:
@@ -49,10 +49,12 @@ class NebulaForgeInteractiveCLI:
 
     def main_menu(self) -> int:
         profile = self.svc.get_current_profile_name()
+        mode = "ON (read-only)" if self.svc.is_production_mode() else "off"
         print(f"""
 === NebulaForge - Secure Conda Environment Manager ===
 
 Security Level: {profile}
+Production Mode: {mode}
 
 Available Options:
 
@@ -103,8 +105,12 @@ Available Options:
                 print(OutputFormatters.format_error_message(result.message))
                 return
 
+        if not self._confirm_mutation('create', name, f"Create environment '{name}'? (y/N): "):
+            print("Operation cancelled")
+            return
+
         print(f"\nCreating environment '{name}'...")
-        result = self.svc.create_environment(name, python_version, packages)
+        result = self.svc.create_environment(name, python_version, packages, confirmed=True)
         print(OutputFormatters.format_success_message(result.message) if result.success
               else OutputFormatters.format_error_message(result.message))
         self._wait()
@@ -166,13 +172,12 @@ Available Options:
         if not env_name:
             return
 
-        confirm = input(f"Delete '{env_name}'? (y/N): ").strip().lower()
-        if confirm not in ('y', 'yes'):
+        if not self._confirm_mutation('delete', env_name, f"Delete '{env_name}'? (y/N): "):
             print("Operation cancelled")
             return
 
         create_backup = input("Create backup? (Y/n): ").strip().lower() != 'n'
-        result = self.svc.delete_environment(env_name, create_backup)
+        result = self.svc.delete_environment(env_name, create_backup, confirmed=True)
         print(OutputFormatters.format_success_message(result.message) if result.success
               else OutputFormatters.format_error_message(result.message))
         self._wait()
@@ -194,7 +199,11 @@ Available Options:
             print("Invalid name")
             return
 
-        result = self.svc.clone_environment(source, target)
+        if not self._confirm_mutation('create', target, f"Clone '{source}' -> '{target}'? (y/N): "):
+            print("Operation cancelled")
+            return
+
+        result = self.svc.clone_environment(source, target, confirmed=True)
         print(OutputFormatters.format_success_message(result.message) if result.success
               else OutputFormatters.format_error_message(result.message))
         self._wait()
@@ -232,7 +241,11 @@ Available Options:
             print("Invalid name")
             return
 
-        result = self.svc.import_environment(Path(filepath), env_name)
+        if not self._confirm_mutation('create', env_name, f"Import as '{env_name}'? (y/N): "):
+            print("Operation cancelled")
+            return
+
+        result = self.svc.import_environment(Path(filepath), env_name, confirmed=True)
         print(OutputFormatters.format_success_message(result.message) if result.success
               else OutputFormatters.format_error_message(result.message))
         self._wait()
@@ -273,6 +286,12 @@ Available Options:
             print("Invalid selection")
         self._wait()
 
+    def _confirm_mutation(self, operation: str, target: str, prompt: str) -> bool:
+        """Ask for confirmation when the active policy requires it."""
+        if not self.svc.require_confirmation_for(operation, target):
+            return True
+        return input(prompt).strip().lower() in ('y', 'yes')
+
     def _select_env(self, environments: List[str]) -> Optional[str]:
         from nebulaforge.core.cli_helpers import select_environment
         return select_environment(environments)
@@ -290,14 +309,20 @@ Available Options:
             print("No packages specified")
             return
         packages = packages_input.split()
-        result = self.svc.install_packages(env_name, packages)
+        if not self._confirm_mutation('modify', env_name, f"Install packages in '{env_name}'? (y/N): "):
+            print("Operation cancelled")
+            return
+        result = self.svc.install_packages(env_name, packages, confirmed=True)
         print(OutputFormatters.format_success_message(result.message) if result.success
               else OutputFormatters.format_error_message(result.message))
 
     def _update_pkgs(self, env_name: str) -> None:
         packages_input = input("Packages to update (empty = all): ").strip()
         packages = packages_input.split() if packages_input else None
-        result = self.svc.update_packages(env_name, packages)
+        if not self._confirm_mutation('modify', env_name, f"Update packages in '{env_name}'? (y/N): "):
+            print("Operation cancelled")
+            return
+        result = self.svc.update_packages(env_name, packages, confirmed=True)
         print(OutputFormatters.format_success_message(result.message) if result.success
               else OutputFormatters.format_error_message(result.message))
 

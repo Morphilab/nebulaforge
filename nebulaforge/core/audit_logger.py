@@ -70,6 +70,13 @@ class AuditLogger:
             sys_handler.setLevel(logging.DEBUG)
             self.logger.addHandler(sys_handler)
 
+        for path in (self.audit_file, self.system_file):
+            if path.exists():
+                try:
+                    path.chmod(0o600)
+                except OSError:
+                    pass
+
     def _generate_session_id(self) -> str:
         return secrets.token_hex(16)
 
@@ -107,11 +114,19 @@ class AuditLogger:
             line = json.dumps(entry, ensure_ascii=False) + '\n'
             with open(file_path, 'a', encoding='utf-8') as f:
                 f.write(line)
+            try:
+                file_path.chmod(0o600)
+            except OSError:
+                pass
             new_hash = hashlib.sha256(line.encode('utf-8')).hexdigest()
             setattr(self, last_hash_attr, new_hash)
             hash_path = file_path.with_suffix('.lasthash')
             tmp_hash = hash_path.with_suffix('.lasthash.tmp')
             tmp_hash.write_text(new_hash, encoding='utf-8')
+            try:
+                tmp_hash.chmod(0o600)
+            except OSError:
+                pass
             tmp_hash.replace(hash_path)
         except Exception as e:
             self.logger.warning(f"Failed to write audit entry: {e}")
