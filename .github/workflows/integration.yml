@@ -23,7 +23,7 @@ jobs:
           auto-update-conda: true
 
       # setup-uv v10.2.0 pinned SHA, uv 0.12.24 (same as tests.yml)
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d
         with:
           version: "0.12.24"
           python-version: "3.12"
